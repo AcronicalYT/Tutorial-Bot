@@ -1,6 +1,13 @@
-const { Client, GatewayIntentBits, Events, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, Events, ActivityType, EmbedBuilder, Collection } = require('discord.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers] });
 const { token } = require('./config.json');
+
+client.commands = new Collection();
+module.exports = client;
+
+["command"].forEach(handler => {
+    require(`./handlers/${handler}`)(client);
+});
 
 client.once(Events.ClientReady, clientReady => {
     // clientReady.user.setActivity(`over ${clientReady.guilds.cache.size} servers`, { type: ActivityType.Watching });
@@ -23,9 +30,14 @@ client.once(Events.ClientReady, clientReady => {
 
 client.on(Events.MessageCreate, (message) => {
     if(message.author.bot) return;
+    if(!message.content.startsWith('!')) return;
+    message.content.split("!");
 
-    if(message.content === '!ping') {
-        message.channel.send('Pong.');
+    const args = message.content.slice("!".length).trim().split(/ +/g);
+    const cmd = args.shift().toLowerCase();
+    let command = client.commands.get(cmd);
+    if(command) {
+        command.run(client, message, args);
     }
 });
 
